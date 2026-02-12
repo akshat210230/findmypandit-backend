@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── TABLE 1: USERS ─────────────────────────────
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  phone         String?   @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          Role      @default(FAMILY)
+  avatarUrl     String?
+  isVerified    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  panditProfile Pandit?
+  bookings      Booking[]
+  reviews       Review[]
+
+  @@map("users")
+}
+
+enum Role {
+  FAMILY
+  PANDIT
+  ADMIN
+}
+
+// ─── TABLE 2: PANDITS ───────────────────────────
+model Pandit {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  bio             String?
+  experienceYears Int      @default(0)
+  languages       String[]
+  specializations String[]
+  priceMin        Int      @default(0)
+  priceMax        Int      @default(0)
+  city            String
+  state           String
+  pincode         String?
+  latitude        Float?
+  longitude       Float?
+  isAvailable     Boolean  @default(true)
+  rating          Float    @default(0)
+  totalReviews    Int      @default(0)
+  documentsUrl    String?
+  verifiedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  services      PanditService[]
+  bookings      Booking[]
+  reviews       Review[]
+  availability  Availability[]
+
+  @@map("pandits")
+}
+
+// ─── TABLE 3: SERVICES ──────────────────────────
+model Service {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  nameHindi   String?
+  description String?
+  category    String
+  iconUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  pandits  PanditService[]
+  bookings Booking[]
+
+  @@map("services")
+}
+
+// ─── TABLE 4: PANDIT-SERVICES ───────────────────
+model PanditService {
+  id        String   @id @default(uuid())
+  panditId  String
+  serviceId String
+  price     Int
+  duration  Int?
+  createdAt DateTime @default(now())
+
+  pandit  Pandit  @relation(fields: [panditId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([panditId, serviceId])
+  @@map("pandit_services")
+}
+
+// ─── TABLE 5: BOOKINGS ─────────────────────────
+model Booking {
+  id              String        @id @default(uuid())
+  userId          String
+  panditId        String
+  serviceId       String
+  bookingDate     DateTime
+  startTime       String
+  endTime         String?
+  address         String
+  city            String
+  pincode         String?
+  specialRequests String?
+  totalAmount     Int
+  status          BookingStatus @default(PENDING)
+  cancelledBy     String?
+  cancelReason    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id])
+  pandit  Pandit   @relation(fields: [panditId], references: [id])
+  service Service  @relation(fields: [serviceId], references: [id])
+  payment Payment?
+  review  Review?
+
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+// ─── TABLE 6: PAYMENTS ─────────────────────────
+model Payment {
+  id                String        @id @default(uuid())
+  bookingId         String        @unique
+  amount            Int
+  currency          String        @default("INR")
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  status            PaymentStatus @default(PENDING)
+  paidAt            DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+// ─── TABLE 7: REVIEWS ──────────────────────────
+model Review {
+  id        String   @id @default(uuid())
+  bookingId String   @unique
+  userId    String
+  panditId  String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  pandit  Pandit  @relation(fields: [panditId], references: [id])
+
+  @@map("reviews")
+}
+
+// ─── TABLE 8: AVAILABILITY ─────────────────────
+model Availability {
+  id        String   @id @default(uuid())
+  panditId  String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isActive  Boolean  @default(true)
+
+  pandit Pandit @relation(fields: [panditId], references: [id], onDelete: Cascade)
+
+  @@unique([panditId, dayOfWeek])
+  @@map("availability")
+}
