@@ -14,10 +14,11 @@ const PORT = process.env.PORT || 5000
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'https://findmypandit-frontend.vercel.app',
+    'https://findmypandit-frontend-s9iq.vercel.app',
   ],
   credentials: true,
 }))
+
 app.use(express.json())
 
 // Health check
