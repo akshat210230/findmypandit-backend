@@ -93,6 +93,35 @@ router.put('/profile', authenticate, async (req: AuthRequest, res: Response): Pr
 
 // ─── SEARCH PANDITS ─────────────────────────────
 // Public route — families search for pandits
+
+// ─── GET MY PANDIT PROFILE ──────────────────────
+router.get('/me', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const pandit = await prisma.pandit.findUnique({
+      where: { userId: req.user.id },
+      include: {
+        user: { select: { firstName: true, lastName: true, email: true, avatarUrl: true } },
+        services: { include: { service: true } },
+        reviews: {
+          include: { user: { select: { firstName: true, lastName: true } } },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        },
+      },
+    })
+
+    if (!pandit) {
+      res.status(404).json({ error: 'Pandit profile not found.' })
+      return
+    }
+
+    res.status(200).json({ pandit })
+  } catch (error) {
+    console.error('Get my profile error:', error)
+    res.status(500).json({ error: 'Something went wrong.' })
+  }
+})
+
 router.get('/search', async (req: Request, res: Response): Promise<void> => {
   try {
     const { city, service, language, minPrice, maxPrice, page = '1', limit = '10' } = req.query
