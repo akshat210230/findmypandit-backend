@@ -98,7 +98,7 @@ router.put('/profile', authenticate, async (req: AuthRequest, res: Response): Pr
 router.get('/me', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const pandit = await prisma.pandit.findUnique({
-      where: { userId: req.user.id },
+     where: { userId: req.user!.userId },
       include: {
         user: { select: { firstName: true, lastName: true, email: true, avatarUrl: true } },
         services: { include: { service: true } },
