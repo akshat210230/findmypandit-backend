@@ -146,13 +146,13 @@ router.post('/google', async (req: Request, res: Response): Promise<void> => {
           role: 'FAMILY',
           phone: null,
           googleId: sub,
-          avatar: picture || null,
+          avatarUrl: picture || null,
         },
       });
     } else if (!user.googleId) {
       user = await prisma.user.update({
         where: { email },
-        data: { googleId: sub, avatar: picture || undefined },
+        data: { googleId: sub, avatarUrl: picture || undefined },
       });
     }
 
