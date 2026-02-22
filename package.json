@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "npx tsx src/index.ts",
-  "build": "tsc",
-  "start": "node dist/src/index.js"
-},
+    "dev": "npx tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/src/index.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -19,6 +19,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
+    "google-auth-library": "^10.5.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.18.0",
     "razorpay": "^2.9.6",

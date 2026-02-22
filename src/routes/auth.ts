@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../lib/prisma'
+import { OAuth2Client } from 'google-auth-library';
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 import { hashPassword, comparePassword, generateToken } from '../utils/auth'
 
 const router = Router()
@@ -109,5 +111,60 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: 'Something went wrong. Please try again.' })
   }
 })
+
+// Google Login
+router.post('/google', async (req: Request, res: Response) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ error: 'Google credential is required' });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload?.email || !payload.email_verified) {
+      return res.status(400).json({ error: 'Invalid Google token' });
+    }
+
+    const { email, given_name, family_name, picture, sub } = payload;
+
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          firstName: given_name || 'User',
+          lastName: family_name || '',
+          password: '',
+          role: 'FAMILY',
+          phone: '',
+          googleId: sub,
+          avatar: picture || null,
+        },
+      });
+    } else if (!user.googleId) {
+      user = await prisma.user.update({
+        where: { email },
+        data: { googleId: sub, avatar: picture || undefined },
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      token,
+      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, avatar: user.avatar },
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({ error: 'Google authentication failed' });
+  }
+});
 
 export default router
