@@ -113,10 +113,13 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 })
 
 // Google Login
-router.post('/google', async (req: Request, res: Response) => {
+router.post('/google', async (req: Request, res: Response): Promise<void> => {
   try {
     const { credential } = req.body;
-    if (!credential) return res.status(400).json({ error: 'Google credential is required' });
+    if (!credential) {
+      res.status(400).json({ error: 'Google credential is required' });
+      return;
+    }
 
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
@@ -124,7 +127,8 @@ router.post('/google', async (req: Request, res: Response) => {
     });
     const payload = ticket.getPayload();
     if (!payload?.email || !payload.email_verified) {
-      return res.status(400).json({ error: 'Invalid Google token' });
+      res.status(400).json({ error: 'Invalid Google token' });
+      return;
     }
 
     const { email, given_name, family_name, picture, sub } = payload;
@@ -132,14 +136,15 @@ router.post('/google', async (req: Request, res: Response) => {
     let user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
+      const dummyHash = await hashPassword(Math.random().toString(36));
       user = await prisma.user.create({
         data: {
           email,
           firstName: given_name || 'User',
           lastName: family_name || '',
-          password: '',
+          passwordHash: dummyHash,
           role: 'FAMILY',
-          phone: '',
+          phone: null,
           googleId: sub,
           avatar: picture || null,
         },
@@ -151,20 +156,15 @@ router.post('/google', async (req: Request, res: Response) => {
       });
     }
 
-    const token = jwt.sign(
-      { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || 'secret',
-      { expiresIn: '7d' }
-    );
+    const token = generateToken(user.id, user.role);
 
     res.json({
       token,
-      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, avatar: user.avatar },
+      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role },
     });
   } catch (error) {
     console.error('Google auth error:', error);
     res.status(500).json({ error: 'Google authentication failed' });
   }
 });
-
 export default router
