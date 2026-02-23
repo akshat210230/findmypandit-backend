@@ -22,7 +22,6 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   googleId      String?   @unique
-  avatarUrl     String?
 
   panditProfile Pandit?
   bookings      Booking[]
