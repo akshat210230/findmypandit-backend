@@ -180,7 +180,7 @@ router.get('/search', async (req: Request, res: Response): Promise<void> => {
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const pandit = await prisma.pandit.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         user: { select: { firstName: true, lastName: true, avatarUrl: true, email: true } },
         services: { include: { service: true } },

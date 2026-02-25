@@ -101,7 +101,7 @@ router.get('/my', authenticate, async (req: AuthRequest, res: Response): Promise
 // Pandit confirms or completes, either party cancels
 router.patch('/:id/status', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params
+    const id = req.params.id as string
     const { status, cancelReason } = req.body
     const userId = req.user!.userId
 
