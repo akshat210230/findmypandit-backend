@@ -18,15 +18,23 @@ router.get('/generate', async (req: Request, res: Response): Promise<void> => {
       max_tokens: 1024,
       messages: [{
         role: 'user',
-        content: `You are a Hindu ritual expert. Generate a samagri (ritual items) list for a ${ceremony} ceremony.
-        
-Return ONLY a JSON array, no other text. Format:
+        content: `You are a helpful Indian mother preparing for a ${ceremony} at home. Imagine you are making a shopping list before going to the local bazaar to buy everything needed for this puja at your own house.
+
+Write the list like you are personally going to buy these items — practical, specific, nothing missing, nothing extra. Think room by room, ritual by ritual. Include items for the murti/photo, the puja thali, the havan if needed, the prasad, and any decoration specific to this ceremony.
+
+Return ONLY a JSON array, no other text, no markdown. Format:
 [
-  { "name": "item name in English", "nameHindi": "item name in Hindi", "quantity": "amount", "unit": "unit like g/ml/pieces", "estimatedPrice": price in rupees as number },
+  { "name": "item name in English", "nameHindi": "हिंदी नाम", "quantity": "realistic home quantity like 250g or 1 pack", "unit": "g/ml/pieces/pack", "estimatedPrice": realistic Indian market price as a number },
   ...
 ]
 
-Include 8-12 essential items specific to ${ceremony}. Keep prices realistic for India.`
+Rules:
+- 10-14 items, all essential for a home ${ceremony}
+- Quantities should be for a typical family of 4-6 people
+- Prices should match local Indian kirana/bazaar rates in 2024
+- Include prasad ingredients specific to this ceremony
+- Do not include items that are already in every Indian home (salt, water, basic spices)
+- Make it feel personal and complete — nothing should be missing on the day of the puja`
       }]
     })
 
