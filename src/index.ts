@@ -6,6 +6,8 @@ import panditRoutes from './routes/pandit'
 import serviceRoutes from './routes/service'
 import bookingRoutes from './routes/booking'
 import reviewRoutes from './routes/review'
+import samagriRoutes from './routes/samagri'
+
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -35,6 +37,7 @@ app.use('/api/pandits', panditRoutes)
 app.use('/api/services', serviceRoutes)
 app.use('/api/bookings', bookingRoutes)
 app.use('/api/reviews', reviewRoutes)
+app.use('/api/samagri', samagriRoutes)
 
 // Start server
 app.listen(PORT, () => {
