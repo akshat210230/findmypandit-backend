@@ -7,6 +7,7 @@ import serviceRoutes from './routes/service'
 import bookingRoutes from './routes/booking'
 import reviewRoutes from './routes/review'
 import samagriRoutes from './routes/samagri'
+import paymentRoutes from './routes/payment'
 
 
 const app = express()
@@ -38,6 +39,7 @@ app.use('/api/services', serviceRoutes)
 app.use('/api/bookings', bookingRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/samagri', samagriRoutes)
+app.use('/api/payment', paymentRoutes)
 
 // Start server
 app.listen(PORT, () => {
