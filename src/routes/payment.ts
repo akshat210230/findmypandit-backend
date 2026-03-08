@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 import Razorpay from 'razorpay'
 import crypto from 'crypto'
-import { authenticateToken } from '../middleware/auth'
+import { authenticate } from '../middleware/auth'
 
 const router = Router()
 
@@ -11,7 +11,7 @@ const razorpay = new Razorpay({
 })
 
 // Create order
-router.post('/create-order', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.post('/create-order', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { amount, bookingId } = req.body
 
@@ -35,7 +35,7 @@ router.post('/create-order', authenticateToken, async (req: Request, res: Respon
 })
 
 // Verify payment
-router.post('/verify', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.post('/verify', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } = req.body
 
