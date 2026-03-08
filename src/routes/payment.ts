@@ -10,6 +10,8 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 })
 
+const INR_TO_USD_RATE = 84 // 1 USD = 84 INR (update periodically)
+
 // Create order
 router.post('/create-order', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
@@ -20,14 +22,22 @@ router.post('/create-order', authenticate, async (req: Request, res: Response): 
       return
     }
 
-const order = await razorpay.orders.create({
-  amount: Math.round(amount) * 100,
-  currency: 'INR',
-  receipt: `booking_${bookingId}`.slice(0, 40),
-  notes: { bookingId: String(bookingId) }
-})
+    const amountInUSD = Math.max(1, Math.round((amount / INR_TO_USD_RATE) * 100)) // in cents
 
-    res.json({ orderId: order.id, amount: order.amount, currency: order.currency })
+    const order = await razorpay.orders.create({
+      amount: amountInUSD,
+      currency: 'USD',
+      receipt: `bk_${bookingId}`.slice(0, 40),
+      notes: { bookingId: String(bookingId), originalINR: String(amount) }
+    })
+
+    res.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      amountINR: amount,
+      amountUSD: (amountInUSD / 100).toFixed(2)
+    })
   } catch (error) {
     console.error('Razorpay order error:', error)
     res.status(500).json({ error: 'Failed to create payment order' })
