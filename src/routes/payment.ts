@@ -20,12 +20,12 @@ router.post('/create-order', authenticate, async (req: Request, res: Response): 
       return
     }
 
-    const order = await razorpay.orders.create({
-      amount: amount * 100, // Razorpay expects paise
-      currency: 'INR',
-      receipt: `booking_${bookingId}`,
-      notes: { bookingId }
-    })
+const order = await razorpay.orders.create({
+  amount: Math.round(amount) * 100,
+  currency: 'INR',
+  receipt: `booking_${bookingId}`.slice(0, 40),
+  notes: { bookingId: String(bookingId) }
+})
 
     res.json({ orderId: order.id, amount: order.amount, currency: order.currency })
   } catch (error) {
