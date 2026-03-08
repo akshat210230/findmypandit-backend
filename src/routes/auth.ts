@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express'
 import { prisma } from '../lib/prisma'
 import { OAuth2Client } from 'google-auth-library';
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-import { hashPassword, comparePassword, generateToken } from '../utils/auth'
+import { hashPassword, comparePassword, generateToken, verifyToken } from '../utils/auth'
 
 const router = Router()
 
@@ -11,23 +11,19 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, firstName, lastName, phone, role } = req.body
 
-    // Validate required fields
     if (!email || !password || !firstName || !lastName) {
       res.status(400).json({ error: 'Email, password, first name, and last name are required.' })
       return
     }
 
-    // Check if email already exists
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
       res.status(400).json({ error: 'An account with this email already exists.' })
       return
     }
 
-    // Hash password
     const passwordHash = await hashPassword(password)
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         email,
@@ -47,7 +43,6 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       },
     })
 
-    // Generate token
     const token = generateToken(user.id, user.role)
 
     res.status(201).json({
@@ -66,33 +61,28 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body
 
-    // Validate
     if (!email || !password) {
       res.status(400).json({ error: 'Email and password are required.' })
       return
     }
 
-    // Find user
     const user = await prisma.user.findUnique({ where: { email } })
     if (!user) {
       res.status(401).json({ error: 'Invalid email or password.' })
       return
     }
 
-    // Check password
     const isMatch = await comparePassword(password, user.passwordHash)
     if (!isMatch) {
       res.status(401).json({ error: 'Invalid email or password.' })
       return
     }
 
-    // Check if account is active
     if (!user.isActive) {
       res.status(403).json({ error: 'Your account has been deactivated.' })
       return
     }
 
-    // Generate token
     const token = generateToken(user.id, user.role)
 
     res.status(200).json({
@@ -112,7 +102,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
   }
 })
 
-// Google Login
+// ─── GOOGLE LOGIN ─────────────────────────────────
 router.post('/google', async (req: Request, res: Response): Promise<void> => {
   try {
     const { credential } = req.body;
@@ -167,4 +157,42 @@ router.post('/google', async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: 'Google authentication failed' });
   }
 });
+
+// ─── GET CURRENT USER ────────────────────────────
+router.get('/me', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Unauthorized' })
+      return
+    }
+    const token = authHeader.split(' ')[1]
+    const decoded = verifyToken(token) as any
+    if (!decoded?.userId) {
+      res.status(401).json({ error: 'Invalid token' })
+      return
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        avatarUrl: true
+      }
+    })
+    if (!user) {
+      res.status(404).json({ error: 'User not found' })
+      return
+    }
+    res.json({ user })
+  } catch (error) {
+    console.error('Get me error:', error)
+    res.status(401).json({ error: 'Invalid token' })
+  }
+})
+
 export default router
